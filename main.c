@@ -1,12 +1,20 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <libgen.h>
 
 
+/******************************************************************************/
+/*** Macros                                                                 ***/
+/******************************************************************************/
 /* Option flags */
 #define FLAGS__INVALID		(0 << 0)
 #define FLAGS__VALID		(1 << 0)
 
 
+/******************************************************************************/
+/*** Global data                                                            ***/
+/******************************************************************************/
 /* Options list */
 static const struct option_t {
 	unsigned long  seed;          /* Option seed key */
@@ -150,6 +158,9 @@ static const unsigned char encrypt_table[] = {
 } ;
 
 
+/******************************************************************************/
+/*** Static functions                                                       ***/
+/******************************************************************************/
 /* Encrypt/Decrypt 32-bit function */
 static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned char encrypt)
 {
@@ -168,30 +179,18 @@ static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned 
 //
 // Funzione di Decrypt Key Code
 //
-static unsigned long decrypt(const char *keyascii, const char *serascii)
+static unsigned long decrypt(const char *keyascii, unsigned long serialnr)
 {
-	char * point;
 	unsigned char x;
 	unsigned long shift;
 	unsigned long key;
 	unsigned long keytemp;
-	unsigned long seriale;
 
 	// Converto Key in unsigned long
 	key = strtoul(keyascii, NULL, 10);
 
-	// Converto Seriale Strumento in unsigned long
-	seriale = strtoul(serascii, &point, 10) * 1000;
-
-	// Controllo fine seriale
-	if(point[0] == '/')
-	{
-		// Aggungo altra parte seriale
-		seriale += strtoul(&point[1], NULL, 10);
-	}
-
 	// Inizializzo variabili
-	shift   = seriale;		// Seriale Strumento
+	shift   = serialnr;		// Seriale Strumento
 	keytemp = key;			// Seriale immesso per opzione
 
 	// Inizializzo contatori loop
@@ -209,27 +208,15 @@ static unsigned long decrypt(const char *keyascii, const char *serascii)
 //
 // Funzione di Encrypt Opzione
 //
-static unsigned long encrypt(unsigned long opzione, const char *serascii)
+static unsigned long encrypt(unsigned long opzione, unsigned long serialnr)
 {
-	char * point;
 	unsigned char x;
 	unsigned long shift;
-	unsigned long seriale;
-
-	// Converto Seriale Strumento in unsigned long
-	seriale = strtoul(serascii, &point, 10) * 1000;
-
-	// Controllo fine seriale
-	if(point[0] == '/')
-	{
-		// Aggungo altra parte seriale
-		seriale += strtoul(&point[1], NULL, 10);
-	}
 
 	// Inizializzo contatori loop
 	for(x=0; x<8; x++)
 	{
-		shift = seriale >> (4 * (7-x));
+		shift = serialnr >> (4 * (7-x));
 
 		opzione = chiper(shift & 0x0F, opzione, 1) + table[shift & 0x0F];
 	}
@@ -239,48 +226,112 @@ static unsigned long encrypt(unsigned long opzione, const char *serascii)
 }
 
 
-//
-// Programma Calcolo Codici Opzioni FSP
-//
+static int get_serialnr(const char *optarg, unsigned long *serialnr)
+{
+	char  *endptr;
+
+	/* Retrieve the number before the slash */
+	*serialnr = 1000 * strtoul(optarg, &endptr, 10);
+
+	/* Bail with an error if no slash follows */
+	if (*endptr != '/')
+		goto err_serialnr;
+
+	/* Bail with an error if nothing follows the slash */
+	endptr++;
+	if (*endptr == '\0')
+		goto err_serialnr;
+
+	/* Add the number following the slash */
+	*serialnr += strtoul(endptr, &endptr, 10);
+
+	/* Bail with an error if anything follows */
+	if (*endptr != '\0')
+		goto err_serialnr;
+
+	return 0;
+
+err_serialnr:
+	fprintf(stderr, "Invalid serial number '%s'\n", optarg);
+	fprintf(stderr, "Serial numbers are formatted like 123456/789\n");
+
+	return -1;
+}
+
+
+/*****************************************************************************/
+/*** Functions                                                             ***/
+/*****************************************************************************/
 int main(int argc, char* argv[])
 {
+	int            result = EXIT_SUCCESS;
+	int            arg;
+	unsigned long  serialnr = 0;
 	// Valori Strumento FSP "http://www.rohde-schwarz.it/it/prodotti/test_and_measurement/spectrum_analysis/FSP-|--|-100-|-6394.html"
-	const char             *KeyString = "0123456789";		// Opzione originale ottenuta da "Rohde & Schwarz", per verifica funzionamento Keygen
-	const char             *SerString = "XXXXXX/XXX";		// Seriale dello strumento
+	const char     *KeyString = "0123456789";		// Opzione originale ottenuta da "Rohde & Schwarz", per verifica funzionamento Keygen
 
-	unsigned long          key;
-	const struct option_t  *option = options;
 
-	//
-	// Test funzionamento con opzione valida
-	//
+	/* Process the command line arguments */
+	while ((arg = getopt(argc, argv, "hs:")) != -1) {
+		switch (arg) {
+		case 's':
+			if (get_serialnr(optarg, &serialnr))
+				return EXIT_FAILURE;
+			break;
 
-	// Decodifica Opzione
-	decrypt(KeyString, SerString);
-
-	// Codifica Opzione
-	key = encrypt(option->seed, SerString);
-
-	//
-	// Calcolo tutte le opzioni "Funzionanti" per Seriale
-	//
-
-	// Per tutte le opzioni dispinibili
-	while (option->seed)
-	{
-		// Controllo se opzione valida
-		if (option->flags & FLAGS__VALID)
-		{
-			// Calcolo chiave
-			key = encrypt(option->seed, SerString);
-
-			// Stampo valore opzione da immettere nello strumento
-			printf("%010lu - %s\r\n", key, option->description);
+		default:
+			result = EXIT_FAILURE;
+		case 'h':
+			fprintf(stderr, "Usage:\n");
+			fprintf(stderr, "%s -s serialnr\n", basename(argv[0]));
+			return result;
 		}
+	}
+	argc -= optind;
+	argv += optind;
 
-		// Opzione successiva
-		option++;
+	if (argc) {
+		fprintf(stderr, "Stdin not supported\n");
+		result = EXIT_FAILURE;
+		goto err_arg;
 	}
 
-	return EXIT_SUCCESS;
+	if (serialnr) {
+		unsigned long          key;
+		const struct option_t  *option = options;
+
+		//
+		// Test funzionamento con opzione valida
+		//
+
+		// Decodifica Opzione
+		decrypt(KeyString, serialnr);
+
+		// Codifica Opzione
+		key = encrypt(option->seed, serialnr);
+
+		//
+		// Calcolo tutte le opzioni "Funzionanti" per Seriale
+		//
+
+		// Per tutte le opzioni dispinibili
+		while (option->seed)
+		{
+			// Controllo se opzione valida
+			if (option->flags & FLAGS__VALID)
+			{
+				// Calcolo chiave
+				key = encrypt(option->seed, serialnr);
+
+				// Stampo valore opzione da immettere nello strumento
+				printf("%010lu - %s\r\n", key, option->description);
+			}
+
+			// Opzione successiva
+			option++;
+		}
+	}
+
+err_arg:
+	return result;
 }
