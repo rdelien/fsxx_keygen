@@ -7,19 +7,14 @@
 #define FALSE		0
 #define TRUE		1
 
-#define DECRYPT		0
-#define ENCRYPT		1
-
 //
 // Definizione struttura opzione
 //
-typedef struct _option_type
-{
+struct option_t {
 	unsigned long       raw_option;     // Valore RAW opzione
 	unsigned char       valid_option;   // Validita' opzione
 	char *              descr_option;   // Descirzione opzione
-
-} option_type;
+};
 
 //
 // Opzioni ammesse
@@ -28,8 +23,7 @@ typedef struct _option_type
 // 2 - "TRUE" Funziona su FSP / "FALSE" Non funziona su FSP, forse su altri dispositivi
 // 3 - Descrizione opzione
 //
-option_type  option_list[] =
-{
+static struct option_t  options[] = {
 	{ 0x069AF1C1, TRUE,  "K5  - GSM/EDGE Application Firmware" },
 	{ 0x0632E6E4, TRUE,  "K7  - AM/FM/PM Measurement Demodulator" },
 	{ 0x2AAC5519, TRUE,  "B17 - IQ Online" },
@@ -86,19 +80,15 @@ option_type  option_list[] =
 //
 // Valori per Addizione/Sottrazione da opzione
 //
-const unsigned long tavola[] =
-{
+static const unsigned long table[] = {
 	0x07D00D940, 0x08488D256, 0x11FBDB21, 0x08838C862,
 	0x0CF78A3D3, 0x07CBCB35C, 0x5F7C7140, 0x0CCBD55D8,
 	0x01115AE60, 0x0E940852B, 0x651F66D0, 0x0BF9CF792,
 	0x0DEFCD8D5, 0x0082D0E96, 0x0CD7B345, 0x0A64FD784
 };
 
-//
-// Tavola di permutazione funzione chiper decrypt
-//
-const unsigned char tavola_decrypt[512] =
-{
+/* Decryption permutation table */
+static const unsigned char decrypt_table[] = {
 	0x09, 0x0A, 0x04, 0x1F, 0x1D, 0x15, 0x06, 0x17, 0x1E, 0x1B, 0x1C, 0x0E, 0x10, 0x02, 0x07, 0x0D,
 	0x03, 0x05, 0x16, 0x08, 0x0C, 0x19, 0x18, 0x00, 0x1A, 0x01, 0x14, 0x0B, 0x12, 0x13, 0x11, 0x0F,
 	0x1F, 0x0C, 0x1B, 0x11, 0x0D, 0x09, 0x0A, 0x15, 0x08, 0x04, 0x07, 0x1A, 0x17, 0x06, 0x01, 0x13,
@@ -133,11 +123,9 @@ const unsigned char tavola_decrypt[512] =
 	0x04, 0x0B, 0x1D, 0x16, 0x03, 0x07, 0x00, 0x1A, 0x09, 0x1B, 0x11, 0x02, 0x0A, 0x0F, 0x01, 0x17
 };
 
-//
-// Tavola di permutazione funzione chiper encrypt
-//
-unsigned char tavola_encrypt[512] =
-{
+
+/* Encryption permutation table */
+static const unsigned char encrypt_table[] = {
 	0x17, 0x19, 0x0D, 0x10, 0x02, 0x11, 0x06, 0x0E, 0x13, 0x00, 0x01, 0x1B, 0x14, 0x0F, 0x0B, 0x1F,
 	0x0C, 0x1E, 0x1C, 0x1D, 0x1A, 0x05, 0x12, 0x07, 0x16, 0x15, 0x18, 0x09, 0x0A, 0x04, 0x08, 0x03,
 	0x15, 0x0E, 0x1B, 0x10, 0x09, 0x13, 0x0D, 0x0A, 0x08, 0x05, 0x06, 0x11, 0x01, 0x04, 0x12, 0x14,
@@ -172,28 +160,18 @@ unsigned char tavola_encrypt[512] =
 	0x0B, 0x1A, 0x0F, 0x09, 0x04, 0x07, 0x13, 0x1F, 0x05, 0x0E, 0x17, 0x19, 0x01, 0x12, 0x00, 0x0D
 } ;
 
-//
-// Funzione Encrypt/Decrypt 32 bit
-//
-unsigned long chiper(unsigned long nibble, unsigned long value, unsigned char type)
+
+/* Encrypt/Decrypt 32-bit function */
+static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned char encrypt)
 {
-	unsigned char x;
-	unsigned long bit;
-	unsigned long chiper;
+	unsigned char  bit;
+	unsigned long  chiper = 0;
 
-	// Inizializzo variabili
-	chiper = 0x00000000;
-
-	// Loop per 32-bit
-	for(x=0; x<32; x++)
-	{
-		bit = value & (0x00000001 << x);
-
-		if(bit != 0)
-		{
-			chiper |= 0x00000001 << (type ? tavola_encrypt[(nibble << 5) + x] : tavola_decrypt[(nibble << 5) + x]);
-		}
-	}
+	/* Iterate all 32 bits */
+	for (bit = 0; bit < 32; bit++)
+		if (value & (1 << bit))
+			chiper |= 1 << (encrypt ? encrypt_table[(nibble << 5) + bit] :
+								      decrypt_table[(nibble << 5) + bit]);
 
 	return chiper;
 }
@@ -201,7 +179,7 @@ unsigned long chiper(unsigned long nibble, unsigned long value, unsigned char ty
 //
 // Funzione di Decrypt Key Code
 //
-unsigned long decrypt(char * keyascii, char * serascii)
+static unsigned long decrypt(char * keyascii, char * serascii)
 {
 	char * point;
 	unsigned char x;
@@ -230,7 +208,7 @@ unsigned long decrypt(char * keyascii, char * serascii)
 	// Inizializzo contatori loop
 	for(x=0; x<8; x++)
 	{
-		keytemp = chiper((shift & 0x0F), (keytemp - tavola[shift & 0x0F]), DECRYPT);
+		keytemp = chiper(shift & 0x0F, keytemp - table[shift & 0x0F], 0);
 
 		shift = shift >> 4;
 	}
@@ -242,7 +220,7 @@ unsigned long decrypt(char * keyascii, char * serascii)
 //
 // Funzione di Encrypt Opzione
 //
-unsigned long encrypt(unsigned long opzione, char * serascii)
+static unsigned long encrypt(unsigned long opzione, char * serascii)
 {
 	char * point;
 	unsigned char x;
@@ -264,7 +242,7 @@ unsigned long encrypt(unsigned long opzione, char * serascii)
 	{
 		shift = seriale >> (4 * (7-x));
 
-		opzione = chiper((shift & 0x0F), opzione, ENCRYPT) + tavola[shift & 0x0F];
+		opzione = chiper(shift & 0x0F, opzione, 1) + table[shift & 0x0F];
 	}
 
 	// Esco con valore opzione
@@ -280,10 +258,10 @@ char SerString []	= {"xxxxxx/xxx"};		// Seriale dello strumento
 //
 // Programma Calcolo Codici Opzioni FSP
 //
-int main(void)
+int main(int argc, char* argv[])
 {
-	unsigned long key;
-	option_type * option = option_list;
+	unsigned long    key;
+	struct option_t  *option = options;
 
 	//
 	// Test funzionamento con opzione valida
@@ -315,4 +293,6 @@ int main(void)
 		// Opzione successiva
 		option++;
 	}
+
+	return EXIT_SUCCESS;
 }
