@@ -1,79 +1,68 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//
-// Definizioni di sostituzione
-//
-#define FALSE		0
-#define TRUE		1
 
-//
-// Definizione struttura opzione
-//
-struct option_t {
-	unsigned long       raw_option;     // Valore RAW opzione
-	unsigned char       valid_option;   // Validita' opzione
-	char *              descr_option;   // Descirzione opzione
-};
+/* Option flags */
+#define FLAGS__INVALID		(0 << 0)
+#define FLAGS__VALID		(1 << 0)
 
-//
-// Opzioni ammesse
-//
-// 1 - Seed Key
-// 2 - "TRUE" Funziona su FSP / "FALSE" Non funziona su FSP, forse su altri dispositivi
-// 3 - Descrizione opzione
-//
-static struct option_t  options[] = {
-	{ 0x069AF1C1, TRUE,  "K5  - GSM/EDGE Application Firmware" },
-	{ 0x0632E6E4, TRUE,  "K7  - AM/FM/PM Measurement Demodulator" },
-	{ 0x2AAC5519, TRUE,  "B17 - IQ Online" },
-	{ 0x081B95E1, FALSE, "None" },
-	{ 0x2E03E151, TRUE,  "K84 - 1xEV-DO BTS Application Firmware" },
-	{ 0x19EF1119, TRUE,  "K84 - 1xEV-DO MS  Application Firmware" },
-	{ 0x310EE121, FALSE, "None" },
-	{ 0x1756CE90, FALSE, "FSP-B15 FSP-B70 FS-K7" },
-	{ 0x1919A691, FALSE, "K72 prior K74" },
-	{ 0x03DAD7E4, FALSE, "None" },
-	{ 0x2196F099, TRUE,  "K9  - Power Meter" },
-	{ 0x3DD9B339, FALSE, "FSP-B15 FS-K7" },
-	{ 0x0E395E40, FALSE, "None" },
-	{ 0x195B9344, FALSE, "None" },
-	{ 0x2C7CE440, TRUE,  "K76 - 3GPP TD-SCDMA BTS Application Firmware" },
-	{ 0x08B0D139, TRUE,  "K77 - 3GPP TD-SCDMA MS  Application Firmware" },
-	{ 0x13DE9644, TRUE,  "K30 - Noise Figure Measurament" },
-	{ 0x0CFD9839, TRUE,  "K82 - CDMA2000 BTS Application Firmware" },
-	{ 0x1AF16EA9, TRUE,  "K83 - CDMA2000 MS  Application Firmware" },
-	{ 0x11E04FA4, TRUE,  "K8  - Bluetooth Application Firmware" },
-	{ 0x0BF1BE90, TRUE,  "K40 - Phase Noise Measurament" },
-	{ 0x03685351, FALSE, "None" },
-	{ 0x1A368DB9, FALSE, "None" },
-	{ 0x3A8A28B9, FALSE, "None" },
-	{ 0x03BA3B10, FALSE, "None" },
-	{ 0x0AF61A31, FALSE,  "31 days trial period" },
-	{ 0x053D6400, FALSE,  "78 days trial period" },
-	{ 0x0D659100, FALSE, "None" },
-	{ 0x3F26B9A4, FALSE, "None" },
-	{ 0x2626FF90, FALSE,  "Frequency Extension" },
-	{ 0x1E0D3564, FALSE, "None" },
-	{ 0x26E9C161, FALSE,  "Trasducer Set" },
-	{ 0x2EFDA244, FALSE, "None" },
-	{ 0x16BF9900, FALSE, "None" },
-	{ 0x0EAFB3A1, FALSE, "None" },
-	{ 0x36C143D9, FALSE, "None" },
-	{ 0x0F64FEB1, FALSE, "None" },
-	{ 0x1CC87A91, FALSE, "None" },
-	{ 0x3C3E8900, FALSE, "None" },
-	{ 0x3936AC24, FALSE, "None" },
-	{ 0x2C810F89, FALSE, "None" },
-	{ 0x2C2CFE40, FALSE, "None" },
-	{ 0x08BA6899, FALSE, "None" },
-	{ 0x20230E90, FALSE, "None" },
-	{ 0x157EA044, FALSE, "None" },
-	{ 0x39D8CC61, FALSE, "None" },
-	{ 0x19C84B04, FALSE, "None" },
-	{ 0x13B57040, FALSE, "None" },
-	{ 0x30D449C4, FALSE, "None" },
-	{ 0x20418E41, FALSE, "None" },
+
+/* Options list */
+static const struct option_t {
+	unsigned long  seed;          /* Option seed key */
+	unsigned int   flags;         /* Option flags */
+	char           *description;  /* Option description string */
+} options[] = {
+	{ 0x069AF1C1, FLAGS__VALID,   "K5  - GSM/EDGE Application Firmware" },
+	{ 0x0632E6E4, FLAGS__VALID,   "K7  - AM/FM/PM Measurement Demodulator" },
+	{ 0x2AAC5519, FLAGS__VALID,   "B17 - IQ Online" },
+	{ 0x081B95E1, FLAGS__INVALID, "None" },
+	{ 0x2E03E151, FLAGS__VALID,   "K84 - 1xEV-DO BTS Application Firmware" },
+	{ 0x19EF1119, FLAGS__VALID,   "K84 - 1xEV-DO MS  Application Firmware" },
+	{ 0x310EE121, FLAGS__INVALID, "None" },
+	{ 0x1756CE90, FLAGS__INVALID, "FSP-B15 FSP-B70 FS-K7" },
+	{ 0x1919A691, FLAGS__INVALID, "K72 prior K74" },
+	{ 0x03DAD7E4, FLAGS__INVALID, "None" },
+	{ 0x2196F099, FLAGS__VALID,   "K9  - Power Meter" },
+	{ 0x3DD9B339, FLAGS__INVALID, "FSP-B15 FS-K7" },
+	{ 0x0E395E40, FLAGS__INVALID, "None" },
+	{ 0x195B9344, FLAGS__INVALID, "None" },
+	{ 0x2C7CE440, FLAGS__VALID,   "K76 - 3GPP TD-SCDMA BTS Application Firmware" },
+	{ 0x08B0D139, FLAGS__VALID,   "K77 - 3GPP TD-SCDMA MS  Application Firmware" },
+	{ 0x13DE9644, FLAGS__VALID,   "K30 - Noise Figure Measurament" },
+	{ 0x0CFD9839, FLAGS__VALID,   "K82 - CDMA2000 BTS Application Firmware" },
+	{ 0x1AF16EA9, FLAGS__VALID,   "K83 - CDMA2000 MS  Application Firmware" },
+	{ 0x11E04FA4, FLAGS__VALID,   "K8  - Bluetooth Application Firmware" },
+	{ 0x0BF1BE90, FLAGS__VALID,   "K40 - Phase Noise Measurament" },
+	{ 0x03685351, FLAGS__INVALID, "None" },
+	{ 0x1A368DB9, FLAGS__INVALID, "None" },
+	{ 0x3A8A28B9, FLAGS__INVALID, "None" },
+	{ 0x03BA3B10, FLAGS__INVALID, "None" },
+	{ 0x0AF61A31, FLAGS__INVALID, "31 days trial period" },
+	{ 0x053D6400, FLAGS__INVALID, "78 days trial period" },
+	{ 0x0D659100, FLAGS__INVALID, "None" },
+	{ 0x3F26B9A4, FLAGS__INVALID, "None" },
+	{ 0x2626FF90, FLAGS__INVALID, "Frequency Extension" },
+	{ 0x1E0D3564, FLAGS__INVALID, "None" },
+	{ 0x26E9C161, FLAGS__INVALID, "Trasducer Set" },
+	{ 0x2EFDA244, FLAGS__INVALID, "None" },
+	{ 0x16BF9900, FLAGS__INVALID, "None" },
+	{ 0x0EAFB3A1, FLAGS__INVALID, "None" },
+	{ 0x36C143D9, FLAGS__INVALID, "None" },
+	{ 0x0F64FEB1, FLAGS__INVALID, "None" },
+	{ 0x1CC87A91, FLAGS__INVALID, "None" },
+	{ 0x3C3E8900, FLAGS__INVALID, "None" },
+	{ 0x3936AC24, FLAGS__INVALID, "None" },
+	{ 0x2C810F89, FLAGS__INVALID, "None" },
+	{ 0x2C2CFE40, FLAGS__INVALID, "None" },
+	{ 0x08BA6899, FLAGS__INVALID, "None" },
+	{ 0x20230E90, FLAGS__INVALID, "None" },
+	{ 0x157EA044, FLAGS__INVALID, "None" },
+	{ 0x39D8CC61, FLAGS__INVALID, "None" },
+	{ 0x19C84B04, FLAGS__INVALID, "None" },
+	{ 0x13B57040, FLAGS__INVALID, "None" },
+	{ 0x30D449C4, FLAGS__INVALID, "None" },
+	{ 0x20418E41, FLAGS__INVALID, "None" },
 	{ 0, 0, 0 }
 };
 
@@ -179,7 +168,7 @@ static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned 
 //
 // Funzione di Decrypt Key Code
 //
-static unsigned long decrypt(char * keyascii, char * serascii)
+static unsigned long decrypt(const char *keyascii, const char *serascii)
 {
 	char * point;
 	unsigned char x;
@@ -220,7 +209,7 @@ static unsigned long decrypt(char * keyascii, char * serascii)
 //
 // Funzione di Encrypt Opzione
 //
-static unsigned long encrypt(unsigned long opzione, char * serascii)
+static unsigned long encrypt(unsigned long opzione, const char *serascii)
 {
 	char * point;
 	unsigned char x;
@@ -249,19 +238,18 @@ static unsigned long encrypt(unsigned long opzione, char * serascii)
 	return opzione;
 }
 
-//
-// Valori Strumento FSP "http://www.rohde-schwarz.it/it/prodotti/test_and_measurement/spectrum_analysis/FSP-|--|-100-|-6394.html"
-//
-char KeyString []	= {"0123456789"};		// Opzione originale ottenuta da "Rohde & Schwarz", per verifica funzionamento Keygen
-char SerString []	= {"xxxxxx/xxx"};		// Seriale dello strumento
 
 //
 // Programma Calcolo Codici Opzioni FSP
 //
 int main(int argc, char* argv[])
 {
-	unsigned long    key;
-	struct option_t  *option = options;
+	// Valori Strumento FSP "http://www.rohde-schwarz.it/it/prodotti/test_and_measurement/spectrum_analysis/FSP-|--|-100-|-6394.html"
+	const char             *KeyString = "0123456789";		// Opzione originale ottenuta da "Rohde & Schwarz", per verifica funzionamento Keygen
+	const char             *SerString = "XXXXXX/XXX";		// Seriale dello strumento
+
+	unsigned long          key;
+	const struct option_t  *option = options;
 
 	//
 	// Test funzionamento con opzione valida
@@ -271,23 +259,23 @@ int main(int argc, char* argv[])
 	decrypt(KeyString, SerString);
 
 	// Codifica Opzione
-	key = encrypt(option->raw_option, SerString);
+	key = encrypt(option->seed, SerString);
 
 	//
 	// Calcolo tutte le opzioni "Funzionanti" per Seriale
 	//
 
 	// Per tutte le opzioni dispinibili
-	while (option->raw_option)
+	while (option->seed)
 	{
 		// Controllo se opzione valida
-		if(option->valid_option == TRUE)
+		if (option->flags & FLAGS__VALID)
 		{
 			// Calcolo chiave
-			key = encrypt(option->raw_option, SerString);
+			key = encrypt(option->seed, SerString);
 
 			// Stampo valore opzione da immettere nello strumento
-			printf("%010lu - %s\r\n", key, option->descr_option);
+			printf("%010lu - %s\r\n", key, option->description);
 		}
 
 		// Opzione successiva
