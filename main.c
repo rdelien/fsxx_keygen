@@ -283,8 +283,6 @@ char SerString []	= {"xxxxxx/xxx"};		// Seriale dello strumento
 int main(void)
 {
 	unsigned long key;
-	unsigned long opzione;
-
 	option_type * option = option_list;
 
 	//
@@ -292,7 +290,7 @@ int main(void)
 	//
 
 	// Decodifica Opzione
-	opzione = decrypt(KeyString, SerString);
+	decrypt(KeyString, SerString);
 
 	// Codifica Opzione
 	key = encrypt(option->raw_option, SerString);	
