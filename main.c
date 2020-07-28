@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <libgen.h>
 
@@ -7,9 +8,13 @@
 /******************************************************************************/
 /*** Macros                                                                 ***/
 /******************************************************************************/
+#define ARRAY_SIZE(arr)         (sizeof(arr) / sizeof((arr)[0]))
+
 /* Option flags */
 #define FLAGS__INVALID		(0 << 0)
 #define FLAGS__VALID		(1 << 0)
+
+#undef DEBUG
 
 
 /******************************************************************************/
@@ -17,9 +22,9 @@
 /******************************************************************************/
 /* Options list */
 static const struct option_t {
-	unsigned long  seed;          /* Option seed key */
-	unsigned int   flags;         /* Option flags */
-	char           *description;  /* Option description string */
+	uint32_t      seed;          /* Option seed key */
+	unsigned int  flags;         /* Option flags */
+	char          *description;  /* Option description string */
 } options[] = {
 	{ 0x069AF1C1, FLAGS__VALID,   "K5  - GSM/EDGE Application Firmware" },
 	{ 0x0632E6E4, FLAGS__VALID,   "K7  - AM/FM/PM Measurement Demodulator" },
@@ -70,14 +75,11 @@ static const struct option_t {
 	{ 0x19C84B04, FLAGS__INVALID, "None" },
 	{ 0x13B57040, FLAGS__INVALID, "None" },
 	{ 0x30D449C4, FLAGS__INVALID, "None" },
-	{ 0x20418E41, FLAGS__INVALID, "None" },
-	{ 0, 0, 0 }
+	{ 0x20418E41, FLAGS__INVALID, "None" }
 };
 
-//
-// Valori per Addizione/Sottrazione da opzione
-//
-static const unsigned long table[] = {
+/* Seed offset table */
+static const uint32_t offset_table[] = {
 	0x07D00D940, 0x08488D256, 0x11FBDB21, 0x08838C862,
 	0x0CF78A3D3, 0x07CBCB35C, 0x5F7C7140, 0x0CCBD55D8,
 	0x01115AE60, 0x0E940852B, 0x651F66D0, 0x0BF9CF792,
@@ -85,7 +87,7 @@ static const unsigned long table[] = {
 };
 
 /* Decryption permutation table */
-static const unsigned char decrypt_table[] = {
+static const uint8_t decrypt_table[] = {
 	0x09, 0x0A, 0x04, 0x1F, 0x1D, 0x15, 0x06, 0x17, 0x1E, 0x1B, 0x1C, 0x0E, 0x10, 0x02, 0x07, 0x0D,
 	0x03, 0x05, 0x16, 0x08, 0x0C, 0x19, 0x18, 0x00, 0x1A, 0x01, 0x14, 0x0B, 0x12, 0x13, 0x11, 0x0F,
 	0x1F, 0x0C, 0x1B, 0x11, 0x0D, 0x09, 0x0A, 0x15, 0x08, 0x04, 0x07, 0x1A, 0x17, 0x06, 0x01, 0x13,
@@ -120,9 +122,8 @@ static const unsigned char decrypt_table[] = {
 	0x04, 0x0B, 0x1D, 0x16, 0x03, 0x07, 0x00, 0x1A, 0x09, 0x1B, 0x11, 0x02, 0x0A, 0x0F, 0x01, 0x17
 };
 
-
 /* Encryption permutation table */
-static const unsigned char encrypt_table[] = {
+static const uint8_t encrypt_table[] = {
 	0x17, 0x19, 0x0D, 0x10, 0x02, 0x11, 0x06, 0x0E, 0x13, 0x00, 0x01, 0x1B, 0x14, 0x0F, 0x0B, 0x1F,
 	0x0C, 0x1E, 0x1C, 0x1D, 0x1A, 0x05, 0x12, 0x07, 0x16, 0x15, 0x18, 0x09, 0x0A, 0x04, 0x08, 0x03,
 	0x15, 0x0E, 0x1B, 0x10, 0x09, 0x13, 0x0D, 0x0A, 0x08, 0x05, 0x06, 0x11, 0x01, 0x04, 0x12, 0x14,
@@ -161,13 +162,11 @@ static const unsigned char encrypt_table[] = {
 /******************************************************************************/
 /*** Static functions                                                       ***/
 /******************************************************************************/
-/* Encrypt/Decrypt 32-bit function */
 static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned char encrypt)
 {
 	unsigned char  bit;
 	unsigned long  chiper = 0;
 
-	/* Iterate all 32 bits */
 	for (bit = 0; bit < 32; bit++)
 		if (value & (1 << bit))
 			chiper |= 1 << (encrypt ? encrypt_table[(nibble << 5) + bit] :
@@ -178,55 +177,35 @@ static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned 
 
 
 #ifdef DEBUG
-//
-// Funzione di Decrypt Key Code
-//
 static unsigned long decrypt(const char *keyascii, unsigned long serialnr)
 {
-	unsigned char x;
-	unsigned long shift;
-	unsigned long key;
-	unsigned long keytemp;
+	unsigned int   nibble;
+	unsigned long  shift = serialnr;
+	unsigned long  key   = strtoul(keyascii, NULL, 10);
 
-	// Converto Key in unsigned long
-	key = strtoul(keyascii, NULL, 10);
-
-	// Inizializzo variabili
-	shift   = serialnr;		// Seriale Strumento
-	keytemp = key;			// Seriale immesso per opzione
-
-	// Inizializzo contatori loop
-	for(x=0; x<8; x++)
-	{
-		keytemp = chiper(shift & 0x0F, keytemp - table[shift & 0x0F], 0);
-
-		shift = shift >> 4;
+	/* Interate through all nibbles */
+	for (nibble = 0; nibble < 8; nibble++) {
+		key = chiper(shift & 0x0f, key - offset_table[shift & 0x0f], 0);
+		shift >>= 4;
 	}
 
-	// Esco con valore opzione
-	return keytemp;
+	return key;
 }
 #endif /* DEBUG */
 
 
-//
-// Funzione di Encrypt Opzione
-//
-static unsigned long encrypt(unsigned long opzione, unsigned long serialnr)
+static unsigned long encrypt(unsigned long seed, unsigned long serialnr)
 {
-	unsigned char x;
-	unsigned long shift;
+	unsigned int   nibble;
+	unsigned long  shift;
 
-	// Inizializzo contatori loop
-	for(x=0; x<8; x++)
-	{
-		shift = serialnr >> (4 * (7-x));
-
-		opzione = chiper(shift & 0x0F, opzione, 1) + table[shift & 0x0F];
+	/* Interate through all nibbles */
+	for (nibble = 0; nibble < 8; nibble++) {
+		shift = serialnr >> (4 * (7 - nibble));
+		seed  = chiper(shift & 0x0f, seed, 1) + offset_table[shift & 0x0f];
 	}
 
-	// Esco con valore opzione
-	return opzione;
+	return seed;
 }
 
 
@@ -299,28 +278,19 @@ int main(int argc, char* argv[])
 
 #ifdef DEBUG
 	fprintf(stderr, "decrypt(\"0123456789\", %ld) = 0x%.8lx\n", serialnr, decrypt("0123456789", serialnr));
-	fprintf(stderr, "encrypt(0x%.8lx,   %ld) = 0x%.8lx\n", options->seed, serialnr, encrypt(options->seed, serialnr));
+	fprintf(stderr, "encrypt(0x%.8x,   %ld) = 0x%.8lx\n", options->seed, serialnr, encrypt(options->seed, serialnr));
 #endif /* DEBUG */
 
 	if (serialnr) {
-		unsigned long          key;
-		const struct option_t  *option = options;
+		unsigned int  ndx;
 
-		// Per tutte le opzioni dispinibili
-		while (option->seed)
-		{
-			// Controllo se opzione valida
-			if (option->flags & FLAGS__VALID)
-			{
-				// Calcolo chiave
-				key = encrypt(option->seed, serialnr);
+		/* Iterate through all options */
+		for (ndx = 0; ndx < ARRAY_SIZE(options); ndx++) {
+			/* Check if option is valid */
+			if (!(options[ndx].flags & FLAGS__VALID))
+				continue;
 
-				// Stampo valore opzione da immettere nello strumento
-				printf("%010lu - %s\r\n", key, option->description);
-			}
-
-			// Opzione successiva
-			option++;
+			fprintf(stdout, "%010lu - %s\n", encrypt(options[ndx].seed, serialnr), options[ndx].description);
 		}
 	}
 
