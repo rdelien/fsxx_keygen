@@ -162,10 +162,10 @@ static const uint8_t encrypt_table[] = {
 /******************************************************************************/
 /*** Static functions                                                       ***/
 /******************************************************************************/
-static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned char encrypt)
+static uint32_t chiper(uint32_t nibble, uint32_t value, unsigned char encrypt)
 {
 	unsigned char  bit;
-	unsigned long  chiper = 0;
+	uint32_t       chiper = 0;
 
 	for (bit = 0; bit < 32; bit++)
 		if (value & (1 << bit))
@@ -177,11 +177,11 @@ static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned 
 
 
 #ifdef DEBUG
-static unsigned long decrypt(const char *keyascii, unsigned long serialnr)
+static uint32_t decrypt(const char *keyascii, uint32_t serialnr)
 {
-	unsigned int   nibble;
-	unsigned long  shift = serialnr;
-	unsigned long  key   = strtoul(keyascii, NULL, 10);
+	unsigned int  nibble;
+	uint32_t      shift = serialnr;
+	uint32_t      key   = strtoul(keyascii, NULL, 10);
 
 	/* Interate through all nibbles */
 	for (nibble = 0; nibble < 8; nibble++) {
@@ -194,10 +194,10 @@ static unsigned long decrypt(const char *keyascii, unsigned long serialnr)
 #endif /* DEBUG */
 
 
-static unsigned long encrypt(unsigned long seed, unsigned long serialnr)
+static uint32_t encrypt(uint32_t seed, uint32_t serialnr)
 {
-	unsigned int   nibble;
-	unsigned long  shift;
+	unsigned int  nibble;
+	uint32_t      shift;
 
 	/* Interate through all nibbles */
 	for (nibble = 0; nibble < 8; nibble++) {
@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
 			if (!(options[ndx].flags & FLAGS__VALID))
 				continue;
 
-			fprintf(stdout, "%010lu - %s\n", encrypt(options[ndx].seed, serialnr), options[ndx].description);
+			fprintf(stdout, "%010u - %s\n", encrypt(options[ndx].seed, serialnr), options[ndx].description);
 		}
 	}
 
