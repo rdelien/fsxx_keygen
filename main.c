@@ -18,14 +18,25 @@
 
 
 /******************************************************************************/
-/*** Global data                                                            ***/
+/*** Types                                                                  ***/
 /******************************************************************************/
-/* Options list */
-static const struct option_t {
+struct option_t {
 	uint32_t      seed;          /* Option seed key */
 	unsigned int  flags;         /* Option flags */
 	char          *description;  /* Option description string */
-} options[] = {
+};
+
+enum mode_t {
+	ENCRYPT,
+	DECRYPT
+};
+
+
+/******************************************************************************/
+/*** Global data                                                            ***/
+/******************************************************************************/
+/* Options list */
+static const struct option_t  options[] = {
 	{ 0x069AF1C1, FLAGS__VALID,   "K5  - GSM/EDGE Application Firmware" },
 	{ 0x0632E6E4, FLAGS__VALID,   "K7  - AM/FM/PM Measurement Demodulator" },
 	{ 0x2AAC5519, FLAGS__VALID,   "B17 - IQ Online" },
@@ -162,17 +173,17 @@ static const uint8_t encrypt_table[] = {
 /******************************************************************************/
 /*** Static functions                                                       ***/
 /******************************************************************************/
-static uint32_t chiper(uint32_t nibble, uint32_t value, unsigned char encrypt)
+static uint32_t cipher(uint32_t nibble, uint32_t value, enum mode_t mode)
 {
 	unsigned char  bit;
-	uint32_t       chiper = 0;
+	uint32_t       cph = 0;
 
 	for (bit = 0; bit < 32; bit++)
 		if (value & (1 << bit))
-			chiper |= 1 << (encrypt ? encrypt_table[(nibble << 5) + bit] :
-			                          decrypt_table[(nibble << 5) + bit]);
+			cph |= 1 << ((mode == ENCRYPT) ? encrypt_table[(nibble << 5) + bit] :
+			                                 decrypt_table[(nibble << 5) + bit]);
 
-	return chiper;
+	return cph;
 }
 
 
@@ -185,7 +196,7 @@ static uint32_t decrypt(const char *keyascii, uint32_t serialnr)
 
 	/* Interate through all nibbles */
 	for (nibble = 0; nibble < 8; nibble++) {
-		key = chiper(shift & 0x0f, key - offset_table[shift & 0x0f], 0);
+		key = cipher(shift & 0x0f, key - offset_table[shift & 0x0f], DECRYPT);
 		shift >>= 4;
 	}
 
@@ -202,7 +213,7 @@ static uint32_t encrypt(uint32_t seed, uint32_t serialnr)
 	/* Interate through all nibbles */
 	for (nibble = 0; nibble < 8; nibble++) {
 		shift = serialnr >> (4 * (7 - nibble));
-		seed  = chiper(shift & 0x0f, seed, 1) + offset_table[shift & 0x0f];
+		seed  = cipher(shift & 0x0f, seed, ENCRYPT) + offset_table[shift & 0x0f];
 	}
 
 	return seed;
