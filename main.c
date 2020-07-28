@@ -171,11 +171,13 @@ static unsigned long chiper(unsigned long nibble, unsigned long value, unsigned 
 	for (bit = 0; bit < 32; bit++)
 		if (value & (1 << bit))
 			chiper |= 1 << (encrypt ? encrypt_table[(nibble << 5) + bit] :
-								      decrypt_table[(nibble << 5) + bit]);
+			                          decrypt_table[(nibble << 5) + bit]);
 
 	return chiper;
 }
 
+
+#ifdef DEBUG
 //
 // Funzione di Decrypt Key Code
 //
@@ -204,6 +206,8 @@ static unsigned long decrypt(const char *keyascii, unsigned long serialnr)
 	// Esco con valore opzione
 	return keytemp;
 }
+#endif /* DEBUG */
+
 
 //
 // Funzione di Encrypt Opzione
@@ -267,9 +271,6 @@ int main(int argc, char* argv[])
 	int            result = EXIT_SUCCESS;
 	int            arg;
 	unsigned long  serialnr = 0;
-	// Valori Strumento FSP "http://www.rohde-schwarz.it/it/prodotti/test_and_measurement/spectrum_analysis/FSP-|--|-100-|-6394.html"
-	const char     *KeyString = "0123456789";		// Opzione originale ottenuta da "Rohde & Schwarz", per verifica funzionamento Keygen
-
 
 	/* Process the command line arguments */
 	while ((arg = getopt(argc, argv, "hs:")) != -1) {
@@ -296,23 +297,14 @@ int main(int argc, char* argv[])
 		goto err_arg;
 	}
 
+#ifdef DEBUG
+	fprintf(stderr, "decrypt(\"0123456789\", %ld) = 0x%.8lx\n", serialnr, decrypt("0123456789", serialnr));
+	fprintf(stderr, "encrypt(0x%.8lx,   %ld) = 0x%.8lx\n", options->seed, serialnr, encrypt(options->seed, serialnr));
+#endif /* DEBUG */
+
 	if (serialnr) {
 		unsigned long          key;
 		const struct option_t  *option = options;
-
-		//
-		// Test funzionamento con opzione valida
-		//
-
-		// Decodifica Opzione
-		decrypt(KeyString, serialnr);
-
-		// Codifica Opzione
-		key = encrypt(option->seed, serialnr);
-
-		//
-		// Calcolo tutte le opzioni "Funzionanti" per Seriale
-		//
 
 		// Per tutte le opzioni dispinibili
 		while (option->seed)
