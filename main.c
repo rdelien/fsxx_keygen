@@ -96,9 +96,30 @@ static const struct option_t  fsp_options[] = {
 	{ 49, FLAGS__INVALID, "None" }
 };
 
+/* FSIQ3 options list */
+static const struct option_t  fsiq3_options[] = {
+	{  0, FLAGS__VALID, "K10 - GSM MS Analyzer" },
+	{  1, FLAGS__VALID, "K11 - GSM BTS Analyzer" },
+	{  2, FLAGS__VALID, "B5  - FFT" },
+	{  3, FLAGS__VALID, "ESI (Does not show on FSIQ3)" },
+	{  4, FLAGS__VALID, "Kxx - Receiver Mode" },
+	{  5, FLAGS__VALID, "FSIQ" },
+	{  6, FLAGS__VALID, "K71 - CDMA ONE BTS Analyzer" },
+	{  7, FLAGS__VALID, "K72 - W-CDMA BTS Analyzer" },
+	{  8, FLAGS__VALID, "K12 - Digital Standard ICO" },
+	{  9, FLAGS__VALID, "K20 - EDGE MS Analyzer Extension" },
+	{ 10, FLAGS__VALID, "K21 - EDGE BTS Analyzer Extension" },
+	{ 11, FLAGS__VALID, "K73 - W-CDMA MS Analyzer" },
+	{ 12, FLAGS__VALID, "K30 - 850 MHz Extension for K10/K20" },
+	{ 13, FLAGS__VALID, "K31 - 850 MHz Extension for K11/K21" },
+	{ 14, FLAGS__VALID, "AFB (Does not show on FSIQ3)" },
+	{ 15, FLAGS__VALID, "Freq limit 41GHz (Does not show on FSIQ3)" }
+};
+
 /* Instruments list */
 static const struct instrument_t  instruments[] = {
-	{"FSP",    ARRAY_SIZE(fsp_options), fsp_options}
+	{"FSP",    ARRAY_SIZE(fsp_options),    fsp_options},
+	{"FSIQ3",  ARRAY_SIZE(fsiq3_options),  fsiq3_options}
 };
 
 /* Seeds, as extracted from API.DLL. The number of seeds also defines the maximum number of options */
@@ -364,7 +385,7 @@ static void dump_raw_keys(unsigned long serialnr)
 
 	/* Iterate through all seeds */
 	for (ndx = 0; ndx < ARRAY_SIZE(seeds); ndx++)
-		fprintf(stdout, "%.2u: %010u\n", ndx, encrypt(seeds[ndx], serialnr));
+		fprintf(stdout, "%.3u: %010u\n", ndx, encrypt(seeds[ndx], serialnr));
 }
 
 
