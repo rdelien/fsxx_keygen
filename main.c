@@ -243,7 +243,7 @@ int main(int argc, char* argv[])
 			result = EXIT_FAILURE;
 		case 'h':
 			fprintf(stderr, "Usage:\n");
-			fprintf(stderr, "%s -s serialnr\n", basename(argv[0]));
+			fprintf(stderr, "%s -s serialnr [-t type]\n", basename(argv[0]));
 			return result;
 		}
 	}
