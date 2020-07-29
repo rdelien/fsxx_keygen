@@ -119,7 +119,18 @@ static const struct option_t  fsiq3_options[] = {
 /* Instruments list */
 static const struct instrument_t  instruments[] = {
 	{"FSP",    ARRAY_SIZE(fsp_options),    fsp_options},
-	{"FSIQ3",  ARRAY_SIZE(fsiq3_options),  fsiq3_options}
+//	{"FSEA20", ARRAY_SIZE(fsea20_options), fsea20_options},
+//	{"FSEA30", ARRAY_SIZE(fsea30_options), fsea30_options},
+//	{"FSEB20", ARRAY_SIZE(fseb20_options), fseb20_options},
+//	{"FSEB30", ARRAY_SIZE(fseb30_options), fseb30_options},
+//	{"FSEM20", ARRAY_SIZE(fsem20_options), fsem20_options},
+//	{"FSEM21", ARRAY_SIZE(fsem21_options), fsem21_options},
+//	{"FSEM30", ARRAY_SIZE(fsem30_options), fsem30_options},
+//	{"FSEM31", ARRAY_SIZE(fsem31_options), fsem31_options},
+	{"FSIQ3",  ARRAY_SIZE(fsiq3_options),  fsiq3_options},
+//	{"FSIQ7",  ARRAY_SIZE(fsiq7_options),  fsiq7_options},
+//	{"FSIQ26", ARRAY_SIZE(fsiq26_options), fsiq26_options},
+//	{"FSIQ40", ARRAY_SIZE(fsiq40_options), fsiq40_options}
 };
 
 /* Seeds, as extracted from API.DLL. The number of seeds also defines the maximum number of options */
