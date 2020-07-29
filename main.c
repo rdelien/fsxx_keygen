@@ -441,8 +441,8 @@ int main(int argc, char* argv[])
 	}
 
 #ifdef DEBUG
-	fprintf(stderr, "decrypt(\"0123456789\", %ld) = 0x%.8lx\n", serialnr, decrypt("0123456789", serialnr));
-	fprintf(stderr, "encrypt(0x%.8x,   %ld) = 0x%.8lx\n", options->seed, serialnr, encrypt(options->seed, serialnr));
+	fprintf(stderr, "decrypt(\"0123456789\", %ld) = 0x%.8x\n", serialnr, decrypt("0123456789", serialnr));
+	fprintf(stderr, "encrypt(0x%.8x,   %ld) = 0x%.8x\n", seeds[0], serialnr, encrypt(seeds[0], serialnr));
 #endif /* DEBUG */
 
 	/* No output if no serial number is given */
