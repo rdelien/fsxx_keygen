@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <unistd.h>
 #include <libgen.h>
 
@@ -21,9 +22,15 @@
 /*** Types                                                                  ***/
 /******************************************************************************/
 struct option_t {
-	unsigned int  seed_ndx;      /* Option seed index */
-	unsigned int  flags;         /* Option flags */
-	char          *description;  /* Option description string */
+	unsigned int           seed_ndx;       /* Option seed index */
+	unsigned int           flags;          /* Option flags */
+	char                   *description;   /* Option description string */
+};
+
+struct instrument_t {
+	char                   *name;          /* Instrument name string */
+	unsigned int           nr_of_options;  /* Nr. of option is the list below */
+	const struct option_t  *options;       /* Instrument option list */
 };
 
 enum mode_t {
@@ -87,6 +94,11 @@ static const struct option_t  fsp_options[] = {
 	{ 47, FLAGS__INVALID, "None" },
 	{ 48, FLAGS__INVALID, "None" },
 	{ 49, FLAGS__INVALID, "None" }
+};
+
+/* Instruments list */
+static const struct instrument_t  instruments[] = {
+	{"FSP",    ARRAY_SIZE(fsp_options), fsp_options}
 };
 
 /* Seeds, as extracted from API.DLL. The number of seeds also defines the maximum number of options */
@@ -307,20 +319,75 @@ err_serialnr:
 }
 
 
+static int get_instrument(const char *optarg, const struct instrument_t **instrument)
+{
+	int  ndx;
+
+	for (ndx = 0; ndx < ARRAY_SIZE(instruments); ndx++)
+		if (!strcasecmp(optarg, instruments[ndx].name)) {
+			*instrument = &instruments[ndx];
+			return 0;
+		}
+
+	fprintf(stderr, "Unsupported instrument '%s'\n", optarg);
+	fprintf(stderr, "Supported instruments are:\n");
+	for (ndx = 0; ndx < ARRAY_SIZE(instruments); ndx++)
+		fprintf(stderr, "%s\n", instruments[ndx].name);
+	fprintf(stderr, "Omit the instrument option for raw keys\n");
+
+	return -1;
+}
+
+
+static void print_options(const struct instrument_t *instrument, unsigned long serialnr)
+{
+	unsigned int  ndx;
+
+	fprintf(stdout, "Option keys for %s with serial number %lu/%.3lu are:\n", instrument->name, serialnr / 1000, serialnr % 1000);
+
+	/* Iterate through all options */
+	for (ndx = 0; ndx < instrument->nr_of_options; ndx++) {
+		/* Check if option is valid */
+		if (!(instrument->options[ndx].flags & FLAGS__VALID))
+			continue;
+
+		fprintf(stdout, "%010u - %s\n", encrypt(seeds[instrument->options[ndx].seed_ndx], serialnr), instrument->options[ndx].description);
+	}
+}
+
+
+static void dump_raw_keys(unsigned long serialnr)
+{
+	unsigned int  ndx;
+
+	fprintf(stdout, "Raw keys for instrument with serial number %lu/%.3lu are:\n", serialnr / 1000, serialnr % 1000);
+
+	/* Iterate through all seeds */
+	for (ndx = 0; ndx < ARRAY_SIZE(seeds); ndx++)
+		fprintf(stdout, "%.2u: %010u\n", ndx, encrypt(seeds[ndx], serialnr));
+}
+
+
 /*****************************************************************************/
 /*** Functions                                                             ***/
 /*****************************************************************************/
 int main(int argc, char* argv[])
 {
-	int            result = EXIT_SUCCESS;
-	int            arg;
-	unsigned long  serialnr = 0;
+	int                  result = EXIT_SUCCESS;
+	int                  arg;
+	unsigned long        serialnr = 0;
+	const struct instrument_t  *instrument = NULL;
 
 	/* Process the command line arguments */
-	while ((arg = getopt(argc, argv, "hs:")) != -1) {
+	while ((arg = getopt(argc, argv, "hs:t:")) != -1) {
 		switch (arg) {
 		case 's':
 			if (get_serialnr(optarg, &serialnr))
+				return EXIT_FAILURE;
+			break;
+
+		case 't':
+			if (get_instrument(optarg, &instrument))
 				return EXIT_FAILURE;
 			break;
 
@@ -346,19 +413,16 @@ int main(int argc, char* argv[])
 	fprintf(stderr, "encrypt(0x%.8x,   %ld) = 0x%.8lx\n", options->seed, serialnr, encrypt(options->seed, serialnr));
 #endif /* DEBUG */
 
-	if (serialnr) {
-		unsigned int  ndx;
+	/* No output if no serial number is given */
+	if (!serialnr)
+		goto err_none;
 
-		/* Iterate through all options */
-		for (ndx = 0; ndx < ARRAY_SIZE(seeds); ndx++) {
-			/* Check if option is valid */
-			if (!(fsp_options[ndx].flags & FLAGS__VALID))
-				continue;
+	if (instrument)
+		print_options(instrument, serialnr);
+	else
+		dump_raw_keys(serialnr);
 
-			fprintf(stdout, "%010u - %s\n", encrypt(seeds[fsp_options[ndx].seed_ndx], serialnr), fsp_options[ndx].description);
-		}
-	}
-
+err_none:
 err_arg:
 	return result;
 }
