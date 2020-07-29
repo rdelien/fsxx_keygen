@@ -55,6 +55,7 @@ Important note
 This project needs your help. If your instrument type is reported not to
 be supported, omit the type from the command line options to optain a
 list of keys:
+
 	$ ./x86_64-linux-gnu/keygen -s 123456/123
 	Raw keys for instrument with serial number 123456/123 are:
 	000: 2999404191
@@ -64,6 +65,7 @@ list of keys:
 	197: 4148504597
 	198: 1532745977
 	199: 0342575056
+
 These keys should be accepted by your instrument. If not,
 this tool is not capable of supporting your instrument.<br>
 Even if accepted, not every key activates an option, and this is where
