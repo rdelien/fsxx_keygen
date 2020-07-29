@@ -21,6 +21,7 @@
 /*** Types                                                                  ***/
 /******************************************************************************/
 struct option_t {
+	unsigned int  seed_ndx;      /* Option seed index */
 	unsigned int  flags;         /* Option flags */
 	char          *description;  /* Option description string */
 };
@@ -34,6 +35,60 @@ enum mode_t {
 /******************************************************************************/
 /*** Global data                                                            ***/
 /******************************************************************************/
+/* FSP options list */
+static const struct option_t  fsp_options[] = {
+	{  0, FLAGS__VALID,   "K5  - GSM/EDGE Application Firmware" },
+	{  1, FLAGS__VALID,   "K7  - AM/FM/PM Measurement Demodulator" },
+	{  2, FLAGS__VALID,   "B17 - IQ Online" },
+	{  3, FLAGS__INVALID, "None" },
+	{  4, FLAGS__VALID,   "K84 - 1xEV-DO BTS Application Firmware" },
+	{  5, FLAGS__VALID,   "K84 - 1xEV-DO MS  Application Firmware" },
+	{  6, FLAGS__INVALID, "None" },
+	{  7, FLAGS__INVALID, "FSP-B15 FSP-B70 FS-K7" },
+	{  8, FLAGS__INVALID, "K72 prior K74" },
+	{  9, FLAGS__INVALID, "None" },
+	{ 10, FLAGS__VALID,   "K9  - Power Meter" },
+	{ 11, FLAGS__INVALID, "FSP-B15 FS-K7" },
+	{ 12, FLAGS__INVALID, "None" },
+	{ 13, FLAGS__INVALID, "None" },
+	{ 14, FLAGS__VALID,   "K76 - 3GPP TD-SCDMA BTS Application Firmware" },
+	{ 15, FLAGS__VALID,   "K77 - 3GPP TD-SCDMA MS  Application Firmware" },
+	{ 16, FLAGS__VALID,   "K30 - Noise Figure Measurament" },
+	{ 17, FLAGS__VALID,   "K82 - CDMA2000 BTS Application Firmware" },
+	{ 18, FLAGS__VALID,   "K83 - CDMA2000 MS  Application Firmware" },
+	{ 19, FLAGS__VALID,   "K8  - Bluetooth Application Firmware" },
+	{ 20, FLAGS__VALID,   "K40 - Phase Noise Measurament" },
+	{ 21, FLAGS__INVALID, "None" },
+	{ 22, FLAGS__INVALID, "None" },
+	{ 23, FLAGS__INVALID, "None" },
+	{ 24, FLAGS__INVALID, "None" },
+	{ 25, FLAGS__INVALID, "31 days trial period" },
+	{ 26, FLAGS__INVALID, "78 days trial period" },
+	{ 27, FLAGS__INVALID, "None" },
+	{ 28, FLAGS__INVALID, "None" },
+	{ 29, FLAGS__INVALID, "Frequency Extension" },
+	{ 30, FLAGS__INVALID, "None" },
+	{ 31, FLAGS__INVALID, "Trasducer Set" },
+	{ 32, FLAGS__INVALID, "None" },
+	{ 33, FLAGS__INVALID, "None" },
+	{ 34, FLAGS__INVALID, "None" },
+	{ 35, FLAGS__INVALID, "None" },
+	{ 36, FLAGS__INVALID, "None" },
+	{ 37, FLAGS__INVALID, "None" },
+	{ 38, FLAGS__INVALID, "None" },
+	{ 39, FLAGS__INVALID, "None" },
+	{ 40, FLAGS__INVALID, "None" },
+	{ 41, FLAGS__INVALID, "None" },
+	{ 42, FLAGS__INVALID, "None" },
+	{ 43, FLAGS__INVALID, "None" },
+	{ 44, FLAGS__INVALID, "None" },
+	{ 45, FLAGS__INVALID, "None" },
+	{ 46, FLAGS__INVALID, "None" },
+	{ 47, FLAGS__INVALID, "None" },
+	{ 48, FLAGS__INVALID, "None" },
+	{ 49, FLAGS__INVALID, "None" }
+};
+
 /* Seeds, as extracted from API.DLL. The number of seeds also defines the maximum number of options */
 static uint32_t	 seeds[] = {
 	0x069AF1C1, 0x0632E6E4, 0x2AAC5519, 0x081B95E1,
@@ -86,60 +141,6 @@ static uint32_t	 seeds[] = {
 	0x8CAF195D, 0x5892B125, 0x78C2F185, 0x5FFEBFFD,
 	0xD8D3B1A6, 0x511EA23C, 0x74C2E985, 0x459A8B34,
 	0xFBA3F746, 0x4C3C9878, 0xBD3B7A76, 0x91392271
-};
-
-/* Options list */
-static const struct option_t  fsp_options[ARRAY_SIZE(seeds)] = {
-	{ FLAGS__VALID,   "K5  - GSM/EDGE Application Firmware" },
-	{ FLAGS__VALID,   "K7  - AM/FM/PM Measurement Demodulator" },
-	{ FLAGS__VALID,   "B17 - IQ Online" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__VALID,   "K84 - 1xEV-DO BTS Application Firmware" },
-	{ FLAGS__VALID,   "K84 - 1xEV-DO MS  Application Firmware" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "FSP-B15 FSP-B70 FS-K7" },
-	{ FLAGS__INVALID, "K72 prior K74" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__VALID,   "K9  - Power Meter" },
-	{ FLAGS__INVALID, "FSP-B15 FS-K7" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__VALID,   "K76 - 3GPP TD-SCDMA BTS Application Firmware" },
-	{ FLAGS__VALID,   "K77 - 3GPP TD-SCDMA MS  Application Firmware" },
-	{ FLAGS__VALID,   "K30 - Noise Figure Measurament" },
-	{ FLAGS__VALID,   "K82 - CDMA2000 BTS Application Firmware" },
-	{ FLAGS__VALID,   "K83 - CDMA2000 MS  Application Firmware" },
-	{ FLAGS__VALID,   "K8  - Bluetooth Application Firmware" },
-	{ FLAGS__VALID,   "K40 - Phase Noise Measurament" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "31 days trial period" },
-	{ FLAGS__INVALID, "78 days trial period" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "Frequency Extension" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "Trasducer Set" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" },
-	{ FLAGS__INVALID, "None" }
 };
 
 /* Seed offset table */
@@ -354,7 +355,7 @@ int main(int argc, char* argv[])
 			if (!(fsp_options[ndx].flags & FLAGS__VALID))
 				continue;
 
-			fprintf(stdout, "%010u - %s\n", encrypt(seeds[ndx], serialnr), fsp_options[ndx].description);
+			fprintf(stdout, "%010u - %s\n", encrypt(seeds[fsp_options[ndx].seed_ndx], serialnr), fsp_options[ndx].description);
 		}
 	}
 
