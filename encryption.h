@@ -11,7 +11,7 @@ extern const unsigned int  nr_of_seeds;
 /*****************************************************************************/
 /*** Functions                                                             ***/
 /*****************************************************************************/
-uint32_t decrypt(const char *keyascii, uint32_t serialnr);
-uint32_t encrypt(uint32_t seed, uint32_t serialnr);
+uint32_t fsxx_decrypt(const char *keyascii, uint32_t serialnr);
+uint32_t fsxx_encrypt(uint32_t seed, uint32_t serialnr);
 
 #endif /* ENCRYPTION_H */
