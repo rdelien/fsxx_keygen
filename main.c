@@ -199,7 +199,7 @@ static void print_options(const struct instrument_t *instrument, unsigned long s
 		if (!(instrument->options[ndx].flags & FLAGS__VALID))
 			continue;
 
-		fprintf(stdout, "%010u - %s\n", encrypt(seeds[instrument->options[ndx].seed_ndx], serialnr), instrument->options[ndx].description);
+		fprintf(stdout, "%010u - %s\n", fsxx_encrypt(seeds[instrument->options[ndx].seed_ndx], serialnr), instrument->options[ndx].description);
 	}
 }
 
@@ -212,7 +212,7 @@ static void print_raw_keys(unsigned long serialnr)
 
 	/* Iterate through all seeds */
 	for (ndx = 0; ndx < nr_of_seeds; ndx++)
-		fprintf(stdout, "%.3u: %010u\n", ndx, encrypt(seeds[ndx], serialnr));
+		fprintf(stdout, "%.3u: %010u\n", ndx, fsxx_encrypt(seeds[ndx], serialnr));
 }
 
 
@@ -257,8 +257,8 @@ int main(int argc, char* argv[])
 	}
 
 #ifdef DEBUG
-	fprintf(stderr, "decrypt(\"0123456789\", %ld) = 0x%.8x\n", serialnr, decrypt("0123456789", serialnr));
-	fprintf(stderr, "encrypt(0x%.8x,   %ld) = 0x%.8x\n", seeds[0], serialnr, encrypt(seeds[0], serialnr));
+	fprintf(stderr, "decrypt(\"0123456789\", %ld) = 0x%.8x\n", serialnr, fsxx_decrypt("0123456789", serialnr));
+	fprintf(stderr, "encrypt(0x%.8x,   %ld) = 0x%.8x\n", seeds[0], serialnr, fsxx_encrypt(seeds[0], serialnr));
 #endif /* DEBUG */
 
 	/* No output if no serial number is given */
