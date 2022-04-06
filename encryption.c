@@ -177,7 +177,7 @@ static uint32_t cipher(uint32_t nibble, uint32_t value, enum mode_t mode)
 /*****************************************************************************/
 /*** Functions                                                             ***/
 /*****************************************************************************/
-uint32_t decrypt(const char *keyascii, uint32_t serialnr)
+uint32_t fsxx_decrypt(const char *keyascii, uint32_t serialnr)
 {
 	unsigned int  nibble;
 	uint32_t      shift = serialnr;
@@ -193,7 +193,7 @@ uint32_t decrypt(const char *keyascii, uint32_t serialnr)
 }
 
 
-uint32_t encrypt(uint32_t seed, uint32_t serialnr)
+uint32_t fsxx_encrypt(uint32_t seed, uint32_t serialnr)
 {
 	unsigned int  nibble;
 	uint32_t      shift;
