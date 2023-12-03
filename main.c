@@ -241,6 +241,11 @@ err_serialnr:
 	return -1;
 }
 
+void print_supported_instruments(){
+	fprintf(stderr, "Supported instruments are:\n");
+	for (int ndx = 0; ndx < ARRAY_SIZE(instruments); ndx++)
+		fprintf(stderr, "%s\n", instruments[ndx].name);
+}
 
 static int get_instrument(const char *optarg, const struct instrument_t **instrument)
 {
@@ -253,11 +258,8 @@ static int get_instrument(const char *optarg, const struct instrument_t **instru
 		}
 
 	fprintf(stderr, "Unsupported instrument '%s'\n", optarg);
-	fprintf(stderr, "Supported instruments are:\n");
-	for (ndx = 0; ndx < ARRAY_SIZE(instruments); ndx++)
-		fprintf(stderr, "%s\n", instruments[ndx].name);
+	print_supported_instruments();
 	fprintf(stderr, "Omit the instrument option for raw keys\n");
-
 	return -1;
 }
 
@@ -291,6 +293,14 @@ static void print_raw_keys(unsigned long serialnr)
 }
 
 
+static void print_usage(char const * const basename)
+{
+	fprintf(stderr, "Usage: %s -s serialnr [-t type]\n", basename);
+	fprintf(stderr, "Example: %s -s 120033/008 -t FSQ8\n\n", basename);
+	fprintf(stderr, "The device type is optional. If your device is not supported (yet), \nthere is still a good chance that the keygen will work.\n");
+	print_supported_instruments();
+}
+
 /*****************************************************************************/
 /*** Functions                                                             ***/
 /*****************************************************************************/
@@ -300,6 +310,11 @@ int main(int argc, char* argv[])
 	int                  arg;
 	unsigned long        serialnr = 0;
 	const struct instrument_t  *instrument = NULL;
+
+	if(argc <= 1){
+		print_usage(basename(argv[0]));
+		return EXIT_FAILURE;
+	}
 
 	/* Process the command line arguments */
 	while ((arg = getopt(argc, argv, "hs:t:")) != -1) {
@@ -317,8 +332,7 @@ int main(int argc, char* argv[])
 		default:
 			result = EXIT_FAILURE;
 		case 'h':
-			fprintf(stderr, "Usage:\n");
-			fprintf(stderr, "%s -s serialnr [-t type]\n", basename(argv[0]));
+			print_usage(basename(argv[0]));
 			return result;
 		}
 	}
